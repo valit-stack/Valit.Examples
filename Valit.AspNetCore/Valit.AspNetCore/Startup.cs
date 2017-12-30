@@ -24,7 +24,16 @@ namespace Valit.AspNetCore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc(options => options.ModelValidatorProviders.Insert(0, new ValitatorProvider()));
+            services.Scan(s => s.FromAssemblyOf<Startup>().AddClasses(c => c.AssignableTo(typeof(IValitator<>))).AsImplementedInterfaces());
+            services.AddTransient<ValitatorFactory, ValitatorFactory>();
+            services.AddTransient<ValitatorProvider, ValitatorProvider>();
+            services.AddTransient<Resolver, Resolver>();
+
+            var provier = services.BuildServiceProvider();
+            var vp = provier.GetService(typeof(ValitatorProvider)) as ValitatorProvider;
+
+            services.AddMvc(options => options.ModelValidatorProviders.Insert(0, vp)).Services.BuildServiceProvider();
+            services.BuildServiceProvider();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
